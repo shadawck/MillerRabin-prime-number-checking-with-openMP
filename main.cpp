@@ -2,6 +2,7 @@
 #include <iostream>
 #include <gmpxx.h>
 #include <chrono>
+#include <omp.h>
 
 #include "ArgParse.hpp"
 #include "FileParse.hpp"
@@ -137,7 +138,6 @@ int main(int argc, char **argv) {
 
     size_t THREAD_NUMBER;
     char *FILEPATH;
-
     handleInputs(argc, argv, THREAD_NUMBER, FILEPATH);
 
     readIntervals = FileParse::readFile(FILEPATH);
@@ -155,13 +155,28 @@ int main(int argc, char **argv) {
     /**
      * SOLUTION - OpenMP solution
      */
-
+    auto chPar = Chrono(true);
+    omp_set_num_threads(THREAD_NUMBER);
     vector<vector<tuple<mpz_class, mpz_class>>> splitVector = SplitVector(INTERVALS, THREAD_NUMBER);
 
-    auto chPar = Chrono(true);
+    #pragma omp parallel for default(none) shared(splitVector)
+    for (size_t i = 0; i < splitVector.size(); ++i) {
+        printf("Thread : %d \n", omp_get_thread_num());
+        MillerRabinSeq::computePrime(splitVector[i]);
+    }
+
+//    int ind = 0;
+//    for (const vector<tuple<mpz_class, mpz_class>>& vec : splitVector){
+//        cout << "Thread " << ind << endl;
+//        FileParse::printTupleVector(vec);
+//        ind++;
+//
+//        MillerRabinSeq::computePrime(vec);
+//    }
+
+
     vector<mpz_class> primeNumbersPar;
     chPar.pause();
-
     /**
      * DISPLAY
      */

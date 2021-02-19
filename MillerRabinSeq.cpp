@@ -1,5 +1,7 @@
 #include "MillerRabinSeq.hpp"
 #include <gmpxx.h>
+#include <iostream>
+#include <omp.h>
 
 using namespace std;
 
@@ -22,7 +24,8 @@ vector<mpz_class> MillerRabinSeq::computePrime(const vector<tuple<mpz_class, mpz
         borneMin = checkOddity(borneMinTemp);
 
         /// Prime number can't be even, so iterate just through odd number of the interval
-        for (; borneMin <= borneMax; borneMin = borneMin + 2) {
+        for (; borneMin <= borneMax; borneMin += 2) {
+//            cout << borneMin << endl;
             primeProbability = mpz_probab_prime_p(borneMin.get_mpz_t(), REPETITION_NUMBER);
             if (primeProbability > 0) {
                 primeNumbers.emplace_back(borneMin);

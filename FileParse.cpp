@@ -1,5 +1,6 @@
 #include <fstream>
 #include <tuple>
+#include <iostream>
 
 #include "FileParse.hpp"
 
@@ -96,4 +97,12 @@ FileParse::adaptInterval(const vector<tuple<mpz_class, mpz_class>> &intervals, s
     }
 
     return adaptedInterval;
+}
+
+void FileParse::printTupleVector(const vector<tuple<mpz_class, mpz_class>> &intervals) {
+    int ind = 0;
+    for (const auto &i : intervals) {
+        cout << "Interval " << ind << " : [" << get<0>(i) << ", " << get<1>(i) << "]" << endl;
+        ind++;
+    }
 }
