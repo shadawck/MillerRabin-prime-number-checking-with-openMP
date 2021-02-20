@@ -124,11 +124,11 @@ vector<vector<T>> SplitVector(const vector<T> &vec, size_t n) {
     size_t begin = 0;
     size_t end = 0;
 
+#pragma omp for
     for (size_t i = 0; i < min(n, vec.size()); ++i) {
         end += (remain > 0) ? (length + !!(remain--)) : length;
         outVec.push_back(vector<T>(vec.begin() + begin, vec.begin() + end));
-        begin = en
-#pragma omp ford;
+        begin = end;
     }
 
     return outVec;
