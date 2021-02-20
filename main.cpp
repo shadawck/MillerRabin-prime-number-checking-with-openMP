@@ -50,7 +50,8 @@ void printPrimeNumber(const vector<mpz_class> &primeNumbersPar) {
 void primeNbDisplay(const vector<mpz_class> &primeNumbersSeq, const vector<mpz_class> &primeNumbersPar) {
     cout << "\n--- Prime Numbers ---" << endl;
 
-    printPrimeNumber(primeNumbersPar);
+    // TODO -> TO uncomment
+//    printPrimeNumber(primeNumbersPar);
 
     cout << endl << primeNumbersSeq.size() << " Prime number found with sequential method" << endl;
     cout << primeNumbersPar.size() << " Prime number found with Parallel method" << endl << endl;
@@ -126,8 +127,10 @@ vector<vector<T>> SplitVector(const vector<T> &vec, size_t n) {
     for (size_t i = 0; i < min(n, vec.size()); ++i) {
         end += (remain > 0) ? (length + !!(remain--)) : length;
         outVec.push_back(vector<T>(vec.begin() + begin, vec.begin() + end));
-        begin = end;
+        begin = en
+#pragma omp ford;
     }
+
     return outVec;
 }
 
@@ -155,32 +158,40 @@ int main(int argc, char **argv) {
     /**
      * SOLUTION - OpenMP solution
      */
-    auto chPar = Chrono(true);
     omp_set_num_threads(THREAD_NUMBER);
+
+    auto chPar = Chrono(true);
     vector<vector<tuple<mpz_class, mpz_class>>> splitVector = SplitVector(INTERVALS, THREAD_NUMBER);
 
-    #pragma omp parallel for default(none) shared(splitVector)
-    for (size_t i = 0; i < splitVector.size(); ++i) {
-        printf("Thread : %d \n", omp_get_thread_num());
-        MillerRabinSeq::computePrime(splitVector[i]);
-    }
+    // Master vector
+    vector<mpz_class> m_primeNumbersPar;
 
-//    int ind = 0;
-//    for (const vector<tuple<mpz_class, mpz_class>>& vec : splitVector){
-//        cout << "Thread " << ind << endl;
-//        FileParse::printTupleVector(vec);
-//        ind++;
-//
-//        MillerRabinSeq::computePrime(vec);
-//    }
+#pragma omp parallel default(none) shared(splitVector, m_primeNumbersPar)
+    {
+        /// Slave vector
+        vector<vector<mpz_class>> s_primeNumbersPar;
 
+#pragma omp for nowait schedule(dynamic)
+        for (size_t i = 0; i < splitVector.size(); ++i) {
+            s_primeNumbersPar.emplace_back(MillerRabinSeq::computePrime(splitVector[i]));
+        }
 
-    vector<mpz_class> primeNumbersPar;
+#pragma omp critical
+        {
+            for (vector<mpz_class> vec : s_primeNumbersPar) {
+                m_primeNumbersPar.insert(m_primeNumbersPar.end(),
+                                         make_move_iterator(vec.begin()),
+                                         make_move_iterator(vec.end())
+                );
+            }
+        };
+    };
     chPar.pause();
-    /**
-     * DISPLAY
-     */
-    primeNbDisplay(primeNumbersSeq, primeNumbersPar);
+
+/**
+ * DISPLAY
+ */
+    primeNbDisplay(primeNumbersSeq, m_primeNumbersPar);
     inputPrint(INTERVALS, THREAD_NUMBER);
     chronoExecution(chInterval, chSeq, chPar);
 

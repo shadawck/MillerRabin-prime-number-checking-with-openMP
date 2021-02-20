@@ -14,6 +14,11 @@ using namespace std;
 vector<tuple<mpz_class, mpz_class>> FileParse::readFile(char *FILENAME) {
     vector<tuple<mpz_class, mpz_class>> intervalsMpz;
     fstream file(FILENAME);
+    if(file.fail()){
+        cout << "Couldn't open the file!" << endl;
+        exit(0);
+    }
+
     mpz_class xMpz, yMpz;
     while (file >> xMpz >> yMpz) {
         intervalsMpz.emplace_back(xMpz, yMpz);
