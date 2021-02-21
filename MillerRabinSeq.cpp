@@ -23,8 +23,8 @@ vector<mpz_class> MillerRabinSeq::computePrime(const vector<tuple<mpz_class, mpz
         borneMin = checkOddity(borneMinTemp);
 
         /// Prime number can't be even, so iterate just through odd number of the interval
-        for (borneMin; borneMin < borneMax; borneMin = borneMin + 2) {
-            primeProbability = mpz_probab_prime_p(borneMinCopy.get_mpz_t(), REPETITION_NUMBER);
+        for (; borneMin < borneMax; borneMin += 2) {
+            primeProbability = mpz_probab_prime_p(borneMin.get_mpz_t(), REPETITION_NUMBER);
             if (primeProbability > 0) {
                 primeNumbers.emplace_back(borneMin);
             }
