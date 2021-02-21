@@ -3,7 +3,7 @@
 ## Build
 
 ```sh
-cmake /path/to/pp_tp1
+cmake /path/to/pp_tp2
 make
 ```
 

@@ -64,7 +64,6 @@ vector<tuple<mpz_class, mpz_class>> SplitTuple(tuple<mpz_class, mpz_class> tup, 
 vector<tuple<mpz_class, mpz_class>>
 FileParse::intervalsOptimisation(vector<tuple<mpz_class, mpz_class>> intervals, size_t THREAD_NUMBER) {
     sort(intervals.begin(), intervals.end());
-
     int index = 0;
     for (size_t i = 0; i < intervals.size(); i++) {
         if (get<1>(intervals[index]) >= get<0>(intervals[i])) {

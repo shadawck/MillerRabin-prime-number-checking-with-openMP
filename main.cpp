@@ -53,7 +53,6 @@ void printPrimeNumber(const vector<mpz_class> &primeNumbersPar) {
 void primeNbDisplay(const vector<mpz_class> &primeNumbersSeq, const vector<mpz_class> &primeNumbersPar) {
     cout << "\n--- Prime Numbers ---" << endl;
 
-    // TODO -> TO uncomment
 //    printPrimeNumber(primeNumbersPar);
 
     cout << endl << primeNumbersSeq.size() << " Prime number found with sequential method" << endl;
@@ -166,13 +165,6 @@ int main(int argc, char **argv) {
     auto chPar = Chrono(true);
     vector<vector<tuple<mpz_class, mpz_class>>> splitVector = SplitVector(INTERVALS, THREAD_NUMBER);
 
-//    int j = 0;
-//    for(vector<tuple<mpz_class, mpz_class>> vecc : splitVector){
-//        cout << "thread : " << j << endl;
-//        FileParse::printTupleVector(vecc);
-//        j++;
-//    }
-
     // Master vector
     vector<mpz_class> m_primeNumbersPar;
     vector<double> m_chronoThread;
@@ -206,6 +198,7 @@ int main(int argc, char **argv) {
                                  make_move_iterator(s_chronoThread.begin()),
                                  make_move_iterator(s_chronoThread.end()));
     };
+    sort(m_primeNumbersPar.begin(), m_primeNumbersPar.end());
     chPar.pause();
 
     double totalTime = accumulate(m_chronoThread.begin(),m_chronoThread.end(),0.0);
@@ -215,7 +208,6 @@ int main(int argc, char **argv) {
         cout << "Thread " << ind << " worked for " <<  d << " (s) - "  << (d/totalTime) * 100 << "%" << endl;
         ind ++;
     }
-
 
 /**
  * DISPLAY
