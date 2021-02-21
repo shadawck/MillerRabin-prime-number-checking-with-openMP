@@ -3,6 +3,9 @@
 #include <gmpxx.h>
 #include <chrono>
 #include <omp.h>
+#include <unistd.h>
+#include <vector>
+#include <numeric>
 
 #include "ArgParse.hpp"
 #include "FileParse.hpp"
@@ -163,20 +166,31 @@ int main(int argc, char **argv) {
     auto chPar = Chrono(true);
     vector<vector<tuple<mpz_class, mpz_class>>> splitVector = SplitVector(INTERVALS, THREAD_NUMBER);
 
+//    int j = 0;
+//    for(vector<tuple<mpz_class, mpz_class>> vecc : splitVector){
+//        cout << "thread : " << j << endl;
+//        FileParse::printTupleVector(vecc);
+//        j++;
+//    }
+
     // Master vector
     vector<mpz_class> m_primeNumbersPar;
+    vector<double> m_chronoThread;
 
-#pragma omp parallel default(none) shared(splitVector, m_primeNumbersPar)
+    #pragma omp parallel default(none) shared(splitVector, m_primeNumbersPar, m_chronoThread)
     {
+        double start = omp_get_wtime();
+
         /// Slave vector
         vector<vector<mpz_class>> s_primeNumbersPar;
+        vector<double> s_chronoThread;
 
-#pragma omp for nowait schedule(dynamic)
+        #pragma omp for nowait schedule(dynamic)
         for (size_t i = 0; i < splitVector.size(); ++i) {
             s_primeNumbersPar.emplace_back(MillerRabinSeq::computePrime(splitVector[i]));
         }
 
-#pragma omp critical
+        #pragma omp critical
         {
             for (vector<mpz_class> vec : s_primeNumbersPar) {
                 m_primeNumbersPar.insert(m_primeNumbersPar.end(),
@@ -185,8 +199,23 @@ int main(int argc, char **argv) {
                 );
             }
         };
+
+        double end = omp_get_wtime();
+        s_chronoThread.emplace_back(end-start);
+        m_chronoThread.insert(m_chronoThread.end(),
+                                 make_move_iterator(s_chronoThread.begin()),
+                                 make_move_iterator(s_chronoThread.end()));
     };
     chPar.pause();
+
+    double totalTime = accumulate(m_chronoThread.begin(),m_chronoThread.end(),0.0);
+    int ind = 0;
+    cout << "Total accumulated time : " << totalTime << endl;
+    for(double d : m_chronoThread){
+        cout << "Thread " << ind << " worked for " <<  d << " (s) - "  << (d/totalTime) * 100 << "%" << endl;
+        ind ++;
+    }
+
 
 /**
  * DISPLAY
