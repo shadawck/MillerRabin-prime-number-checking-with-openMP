@@ -38,7 +38,7 @@ vector<vector<T>> SplitVector(const vector<T> &vec, size_t n);
 
 using namespace std;
 
-/// ./pp_tp1 -t <threadNumber> -f <file_with_interval>
+/// ./pp_tp1 <threadNumber> <file_with_interval>
 int main(int argc, char **argv) {
     vector<tuple<mpz_class, mpz_class>> INTERVALS;
     vector<tuple<mpz_class, mpz_class>> readIntervals;
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
     primeNbDisplay(m_primeNumbersPar);
     chronoExecutionDisplay(chInterval, chSeq, chPar);
 
-    /// If you only want primeNumber and chrono time on stdout/stderr, comment the 3 function below
+    /// If you only want primeNumber and chrono time on stdout/stderr, comment the 3 functions below
     primeNbStatDisplay(primeNumbersSeq, m_primeNumbersPar);
     inputPrintDisplay(INTERVALS, THREAD_NUMBER);
     threadTimeDisplay(m_chronoThread);

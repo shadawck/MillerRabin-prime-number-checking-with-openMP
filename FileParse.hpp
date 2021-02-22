@@ -13,6 +13,7 @@ public :
 
     static vector<tuple<mpz_class, mpz_class>>
     intervalsOptimisation(vector<tuple<mpz_class, mpz_class>> intervals, size_t THREAD_NUMBER);
+
     static void printTupleVector(const vector<tuple<mpz_class, mpz_class>> &intervals);
 
 private :
