@@ -14,7 +14,7 @@ using namespace std;
 vector<tuple<mpz_class, mpz_class>> FileParse::readFile(char *FILENAME) {
     vector<tuple<mpz_class, mpz_class>> intervalsMpz;
     fstream file(FILENAME);
-    if(file.fail()){
+    if (file.fail()) {
         cout << "Couldn't open the file!" << endl;
         exit(0);
     }
@@ -66,20 +66,22 @@ FileParse::intervalsOptimisation(vector<tuple<mpz_class, mpz_class>> intervals, 
     sort(intervals.begin(), intervals.end());
     int index = 0;
     for (size_t i = 0; i < intervals.size(); i++) {
+
         if (get<1>(intervals[index]) >= get<0>(intervals[i])) {
-            get<1>(intervals[index]) = max(get<1>(intervals[index]), get<1>(intervals[i]));
             get<0>(intervals[index]) = min(get<0>(intervals[index]), get<0>(intervals[i]));
+            get<1>(intervals[index]) = max(get<1>(intervals[index]), get<1>(intervals[i]));
         } else {
             index++;
+            intervals[index] = intervals[i];
         }
     }
     intervals.erase(intervals.begin() + index + 1, intervals.end());
 
-    if (intervals.size() < THREAD_NUMBER) {
-        return adaptInterval(intervals, THREAD_NUMBER, intervals.size());
-    }
+//    if (intervals.size() < THREAD_NUMBER) {
+    return adaptInterval(intervals, THREAD_NUMBER, intervals.size());
+//    }
 
-    return intervals;
+//    return intervals;
 }
 
 /***

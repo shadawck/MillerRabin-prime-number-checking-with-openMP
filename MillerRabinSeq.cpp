@@ -1,6 +1,6 @@
 #include "MillerRabinSeq.hpp"
+#include "Chrono.hpp"
 #include <gmpxx.h>
-#include <omp.h>
 #include <iostream>
 
 using namespace std;
@@ -15,6 +15,7 @@ int REPETITION_NUMBER = 10;
 vector<mpz_class> MillerRabinSeq::computePrime(const vector<tuple<mpz_class, mpz_class>> &intervals) {
     int primeProbability;
     vector<mpz_class> primeNumbers;
+    Chrono chProba;
 
     for (tuple<mpz_class, mpz_class> tup : intervals) {
         mpz_class borneMin = get<0>(tup);
@@ -25,7 +26,9 @@ vector<mpz_class> MillerRabinSeq::computePrime(const vector<tuple<mpz_class, mpz
 
         /// Prime number can't be even, so iterate just through odd number of the interval
         for (; borneMin <= borneMax; borneMin += 2) {
+            chProba = Chrono(true);
             primeProbability = mpz_probab_prime_p(borneMin.get_mpz_t(), REPETITION_NUMBER);
+            chProba.pause();
             if (primeProbability > 0) {
                 primeNumbers.emplace_back(borneMin);
             }
