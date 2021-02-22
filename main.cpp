@@ -21,7 +21,101 @@ void threadTimeDisplay(vector<double> &m_chronoThread);
 
 void printIntervalForEachThread(vector<vector<tuple<mpz_class, mpz_class>>> &splitVector);
 
+void chronoExecutionDisplay(Chrono &chInterval, Chrono &chSeq, Chrono &chPara);
+
+void primeNbDisplay(const vector<mpz_class> &primeNumbersPar);
+
+void primeNbStatDisplay(const vector<mpz_class> &primeNumbersSeq, const vector<mpz_class> &primeNumbersPar);
+
+void handleInputs(int argc, char **argv, size_t &THREAD_NUMBER, char *&FILEPATH);
+
+void setupInputs(int argc, char **argv, size_t &THREAD_NUMBER, char *&FILEPATH);
+
+void inputPrintDisplay(const vector<tuple<mpz_class, mpz_class>> &intervals, int threadNb);
+
+template<typename T>
+vector<vector<T>> SplitVector(const vector<T> &vec, size_t n);
+
 using namespace std;
+
+/// ./pp_tp1 -t <threadNumber> -f <file_with_interval>
+int main(int argc, char **argv) {
+    vector<tuple<mpz_class, mpz_class>> INTERVALS;
+    vector<tuple<mpz_class, mpz_class>> readIntervals;
+
+    size_t THREAD_NUMBER;
+    char *FILEPATH;
+
+    setupInputs(argc, argv, THREAD_NUMBER, FILEPATH);
+    // Enter input with flag. Best for us. Debug
+    //handleInputs(argc, argv, THREAD_NUMBER, FILEPATH);
+
+    readIntervals = FileParse::readFile(FILEPATH);
+    auto chInterval = Chrono(true);
+    INTERVALS = FileParse::intervalsOptimisation(readIntervals, THREAD_NUMBER);
+    chInterval.pause();
+
+    /**
+     * MillerRabin Sequential
+     */
+    auto chSeq = Chrono(true);
+    vector<mpz_class> primeNumbersSeq = MillerRabinSeq::computePrime(INTERVALS);
+    chSeq.pause();
+
+    /**
+     * SOLUTION - OpenMP solution
+     */
+
+    omp_set_num_threads(THREAD_NUMBER);
+
+    auto chPar = Chrono(true);
+    vector<vector<tuple<mpz_class, mpz_class>>> splitVector = SplitVector(INTERVALS, THREAD_NUMBER);
+
+    // Uncomment to see intervals in threads
+    // printIntervalForEachThread(splitVector);
+
+    /// Master vector
+    vector<mpz_class> m_primeNumbersPar;
+    vector<double> m_chronoThread;
+
+#pragma omp parallel default(none) shared(splitVector, m_primeNumbersPar, m_chronoThread)
+    {
+        double start = omp_get_wtime();
+
+        /// Slave vector
+        vector<vector<mpz_class>> s_primeNumbersPar;
+        vector<double> s_chronoThread;
+
+#pragma omp for nowait schedule(dynamic, 1)
+        for (size_t i = 0; i < splitVector.size(); ++i) {
+            s_primeNumbersPar.emplace_back(MillerRabinSeq::computePrime(splitVector[i]));
+        }
+
+#pragma omp critical
+        {
+            mergeMasterAndSlaveVector(m_primeNumbersPar, s_primeNumbersPar);
+        };
+
+        double end = omp_get_wtime();
+        mergeMasterAndSlaveTimeVector(m_chronoThread, start, s_chronoThread, end);
+    };
+
+    sort(m_primeNumbersPar.begin(), m_primeNumbersPar.end());
+    chPar.pause();
+
+    /**
+    * DISPLAY
+    */
+    primeNbDisplay(m_primeNumbersPar);
+    chronoExecutionDisplay(chInterval, chSeq, chPar);
+
+    /// If you only want primeNumber and chrono time on stdout/stderr, comment the 3 function below
+    primeNbStatDisplay(primeNumbersSeq, m_primeNumbersPar);
+    inputPrintDisplay(INTERVALS, THREAD_NUMBER);
+    threadTimeDisplay(m_chronoThread);
+
+    return 0;
+}
 
 /***
  * Print chrono execution time
@@ -42,7 +136,6 @@ void chronoExecutionDisplay(Chrono &chInterval, Chrono &chSeq, Chrono &chPara) {
 
     cout << "SPEEDUP : " << chSeq.get() / chPara.get() << endl;
 }
-
 
 /***
  * Print all prime number found with parallel method
@@ -104,6 +197,36 @@ void handleInputs(int argc, char **argv, size_t &THREAD_NUMBER, char *&FILEPATH)
 }
 
 /***
+ * Handle user input
+ * @param argc
+ * @param argv
+ * @param THREAD_NUMBER
+ * @param FILEPATH
+ */
+void setupInputs(int argc, char **argv, size_t &THREAD_NUMBER, char *&FILEPATH) {
+    if (argc < 3) {
+        cout << "One argument is lacking" << endl;
+        cout << "Please enter something like :" << endl;
+        cout << "./pp_tp2 <thread_number> <filepath>" << endl;
+        exit(0);
+    } else {
+        try {
+            THREAD_NUMBER = stoi(argv[1]);
+            FILEPATH = argv[2];
+        } catch (invalid_argument i) {
+            try {
+                THREAD_NUMBER = stoi(argv[2]);
+                FILEPATH = argv[1];
+            } catch (invalid_argument ii) {
+                cout << "Please enter something like :" << endl;
+                cout << "./pp_tp2 <thread_number> <filepath>" << endl;
+                exit(0);
+            }
+        }
+    }
+}
+
+/***
  * Print user input
  * @param intervals
  * @param threadNb
@@ -142,81 +265,6 @@ vector<vector<T>> SplitVector(const vector<T> &vec, size_t n) {
     return outVec;
 }
 
-/// ./pp_tp1 -t <threadNumber> -f <file_with_interval>
-int main(int argc, char **argv) {
-    vector<tuple<mpz_class, mpz_class>> INTERVALS;
-    vector<tuple<mpz_class, mpz_class>> readIntervals;
-
-    size_t THREAD_NUMBER;
-    char *FILEPATH;
-    handleInputs(argc, argv, THREAD_NUMBER, FILEPATH);
-
-    readIntervals = FileParse::readFile(FILEPATH);
-    auto chInterval = Chrono(true);
-    INTERVALS = FileParse::intervalsOptimisation(readIntervals, THREAD_NUMBER);
-    chInterval.pause();
-
-    /**
-     * MillerRabin Sequential
-     */
-    auto chSeq = Chrono(true);
-    vector<mpz_class> primeNumbersSeq = MillerRabinSeq::computePrime(INTERVALS);
-    chSeq.pause();
-
-    /**
-     * SOLUTION - OpenMP solution
-     */
-    omp_set_num_threads(THREAD_NUMBER);
-
-    auto chPar = Chrono(true);
-    vector<vector<tuple<mpz_class, mpz_class>>> splitVector = SplitVector(INTERVALS, THREAD_NUMBER);
-
-    // Uncomment to see intervals in threads
-//     printIntervalForEachThread(splitVector);
-
-    /// Master vector
-    vector<mpz_class> m_primeNumbersPar;
-    vector<double> m_chronoThread;
-
-#pragma omp parallel default(none) shared(splitVector, m_primeNumbersPar, m_chronoThread)
-    {
-        double start = omp_get_wtime();
-
-        /// Slave vector
-        vector<vector<mpz_class>> s_primeNumbersPar;
-        vector<double> s_chronoThread;
-
-#pragma omp for nowait schedule(dynamic, 1)
-        for (size_t i = 0; i < splitVector.size(); ++i) {
-            s_primeNumbersPar.emplace_back(MillerRabinSeq::computePrime(splitVector[i]));
-        }
-
-#pragma omp critical
-        {
-            mergeMasterAndSlaveVector(m_primeNumbersPar, s_primeNumbersPar);
-        };
-
-        double end = omp_get_wtime();
-        mergeMasterAndSlaveTimeVector(m_chronoThread, start, s_chronoThread, end);
-    };
-
-    sort(m_primeNumbersPar.begin(), m_primeNumbersPar.end());
-    chPar.pause();
-
-    /**
-    * DISPLAY
-    */
-    primeNbDisplay(m_primeNumbersPar);
-    chronoExecutionDisplay(chInterval, chSeq, chPar);
-
-    /// If you only want primeNumber and chrono time on stdout/stderr, comment the 3 function below
-    primeNbStatDisplay(primeNumbersSeq, m_primeNumbersPar);
-    inputPrintDisplay(INTERVALS, THREAD_NUMBER);
-    threadTimeDisplay(m_chronoThread);
-
-    return 0;
-}
-
 /***
  * Help corrector to debug and visualize threads and intervals
  * @param splitVector
@@ -230,6 +278,10 @@ void printIntervalForEachThread(vector<vector<tuple<mpz_class, mpz_class>>> &spl
     }
 }
 
+/***
+ * Display Execution time for each thread
+ * @param m_chronoThread
+ */
 void threadTimeDisplay(vector<double> &m_chronoThread) {
     cout << "--- Threads Time Detail ---" << endl;
 
@@ -243,6 +295,13 @@ void threadTimeDisplay(vector<double> &m_chronoThread) {
     }
 }
 
+/***
+ * Merge MasterVectorTime and SlaveVectorTime without copy, for threadTimeDisplay()
+ * @param m_chronoThread
+ * @param start
+ * @param s_chronoThread
+ * @param end
+ */
 void
 mergeMasterAndSlaveTimeVector(vector<double> &m_chronoThread, double start, vector<double> &s_chronoThread,
                               double end) {
@@ -252,6 +311,13 @@ mergeMasterAndSlaveTimeVector(vector<double> &m_chronoThread, double start, vect
                           make_move_iterator(s_chronoThread.end()));
 }
 
+/***
+ * Merge MasterVector and SlaveVector without copy
+ * @param m_chronoThread
+ * @param start
+ * @param s_chronoThread
+ * @param end
+ */
 void mergeMasterAndSlaveVector(vector<mpz_class> &m_primeNumbersPar, vector<vector<mpz_class>> &s_primeNumbersPar) {
     for (vector<mpz_class> vec : s_primeNumbersPar) {
         m_primeNumbersPar.insert(m_primeNumbersPar.end(),
@@ -260,3 +326,5 @@ void mergeMasterAndSlaveVector(vector<mpz_class> &m_primeNumbersPar, vector<vect
         );
     }
 }
+
+
