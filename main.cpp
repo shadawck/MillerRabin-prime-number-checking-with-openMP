@@ -213,11 +213,11 @@ void setupInputs(int argc, char **argv, size_t &THREAD_NUMBER, char *&FILEPATH) 
         try {
             THREAD_NUMBER = stoi(argv[1]);
             FILEPATH = argv[2];
-        } catch (invalid_argument i) {
+        } catch (invalid_argument const &i) {
             try {
                 THREAD_NUMBER = stoi(argv[2]);
                 FILEPATH = argv[1];
-            } catch (invalid_argument ii) {
+            } catch (invalid_argument const &ii) {
                 cout << "Please enter something like :" << endl;
                 cout << "./pp_tp2 <thread_number> <filepath>" << endl;
                 exit(0);
